@@ -6,7 +6,11 @@ import (
 	"testing"
 )
 
-var ml lock.Multiplelock
+var ml lock.MultipleLock
+
+func init() {
+	ml = lock.NewMultipleLock()
+}
 
 //go test -v -count=1 --run TestHello .
 func TestHello(t *testing.T) {
@@ -49,14 +53,14 @@ func TestMultiplelock(t *testing.T) {
 	go func() {
 		ml.Lock(1)
 		t.Log("lock success")
-		time.Sleep(time.Second)
-		ml.Unlock(1)
-	}()
-	go func() {
-		ml.Lock(1)
-		t.Log("lock success")
-		time.Sleep(time.Second)
+		time.Sleep(2*time.Second)
 		ml.Unlock(1)
 	}()
 
+	ml.Lock(1)
+	t.Log("lock success")
+	time.Sleep(1*time.Second)
+	ml.Unlock(1)
+
+	ml.Wait(1)
 }

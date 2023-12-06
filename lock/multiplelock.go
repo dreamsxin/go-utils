@@ -6,6 +6,7 @@ import (
 )
 
 type refCounter struct {
+	waitGroup sync.WaitGroup
 	counter int64
 	lock    *sync.RWMutex
 }
@@ -23,6 +24,8 @@ type MultipleLock interface {
 
 	// RUnlock the the read lock
 	RUnlock(interface{})
+
+	Wait(key interface{})
 }
 
 // A multi lock type
@@ -34,25 +37,34 @@ type lock struct {
 func (l *lock) Lock(key interface{}) {
 	m := l.getLocker(key)
 	atomic.AddInt64(&m.counter, 1)
+	m.waitGroup.Add(1)
 	m.lock.Lock()
 }
 
 func (l *lock) RLock(key interface{}) {
 	m := l.getLocker(key)
 	atomic.AddInt64(&m.counter, 1)
+	m.waitGroup.Add(1)
 	m.lock.RLock()
 }
 
 func (l *lock) Unlock(key interface{}) {
 	m := l.getLocker(key)
+	m.waitGroup.Done()
 	m.lock.Unlock()
 	l.putBackInPool(key, m)
 }
 
 func (l *lock) RUnlock(key interface{}) {
 	m := l.getLocker(key)
+	m.waitGroup.Done()
 	m.lock.RUnlock()
 	l.putBackInPool(key, m)
+}
+
+func (l *lock) Wait(key interface{}) {
+	m := l.getLocker(key)
+	m.waitGroup.Wait()
 }
 
 func (l *lock) putBackInPool(key interface{}, m *refCounter) {
