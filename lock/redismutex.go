@@ -1,11 +1,13 @@
 package lock
 
 import (
-	"github.com/go-redis/redis"
+	"context"
 	"time"
+	"github.com/redis/go-redis/v9"
 )
 
-type NxMutex struct {
+type RedisMutex struct {
+	ctx         context.Context
 	db          *redis.Client
 	LockPath    string
 	ChannelPath string
@@ -13,40 +15,50 @@ type NxMutex struct {
 	LockTime    time.Duration
 }
 
-func NewNxMutex(db *redis.Client, lockName string, lockTime time.Duration) (*NxMutex, error) {
-	// 检查连接
-	_, err := db.Ping().Result()
+func NewRedisMutex(ctx context.Context, db *redis.Client, lockName string, lockTime time.Duration) (*RedisMutex, error) {
+	_, err := db.Ping(ctx).Result()
 	if err != nil {
 		return nil, err
 	}
 	if lockTime < 0 {
-		lockTime = time.Duration(0) // NO TTL LIMIT
+		lockTime = time.Duration(0)
 	}
-	channelPath := "NxMutex:Channel:" + lockName
-	ps := db.Subscribe(channelPath)
-	return &NxMutex{
+	channelPath := "RedisMutex:Channel:" + lockName
+	ps := db.Subscribe(ctx, channelPath)
+	return &RedisMutex{
+		ctx:         ctx,
 		db:          db,
-		LockPath:    "NxMutex:EXIST:" + lockName,
+		LockPath:    "RedisMutex:EXIST:" + lockName,
 		ChannelPath: channelPath,
 		ch:          ps.Channel(),
 		LockTime:    lockTime,
 	}, err
 }
 
-func (m *NxMutex) Lock() {
+func (m *RedisMutex) Lock() {
 	for {
-		created, err := m.db.SetNX(m.LockPath, "lock", m.LockTime).Result()
+		created, err := m.db.SetNX(m.ctx, m.LockPath, "lock", m.LockTime).Result()
 		if err != nil {
 			panic(err)
 		}
 		if created {
 			break
 		}
-		<-m.ch // wait pub
+		<-m.ch
 	}
 }
 
-func (m *NxMutex) Unlock() {
-	m.db.Del(m.LockPath)
-	m.db.Publish(m.ChannelPath, "unlock")
+func (m *RedisMutex) TryLock() bool {
+	for {
+		created, err := m.db.SetNX(m.ctx, m.LockPath, "lock", m.LockTime).Result()
+		if err != nil {
+			panic(err)
+		}
+		return created
+	}
+}
+
+func (m *RedisMutex) Unlock() {
+	m.db.Del(m.ctx, m.LockPath)
+	m.db.Publish(m.ctx, m.ChannelPath, "unlock")
 }
