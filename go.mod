@@ -1,4 +1,4 @@
-module github.com/dreamsxin/goutils
+module github.com/dreamsxin/go-utils
 
 go 1.21.4
 
