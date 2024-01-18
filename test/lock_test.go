@@ -2,14 +2,26 @@ package test
 
 import (
 	"time"
+	"context"
+    "sync"
 	"github.com/dreamsxin/goutils/lock"
+	"github.com/redis/go-redis/v9"
 	"testing"
 )
 
 var ml lock.MultipleLock
+var rl *lock.RedisMutex
 
 func init() {
 	ml = lock.NewMultipleLock()
+    ctx := context.Background()
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:	  "localhost:6379",
+		Password: "123456", // no password set
+		DB:		  0,  // use default DB
+	})
+	rl, _ = lock.NewRedisMutex(ctx, rdb, "lock.test", time.Duration(10*time.Second))
 }
 
 //go test -v -count=1 --run TestHello .
@@ -63,4 +75,26 @@ func TestMultiplelock(t *testing.T) {
 	ml.Unlock(1)
 
 	ml.Wait(1)
+}
+
+//go test -v -count=1 --run TestRedislock .
+func TestRedislock(t *testing.T) {
+	var waitGroup sync.WaitGroup
+    waitGroup.Add(1)
+	go func() {
+        defer waitGroup.Done()
+		t.Log("start lock2")
+		rl.Lock()
+		t.Log("lock2 success")
+		time.Sleep(2*time.Second)
+		rl.Unlock()
+		t.Log("lock2 unlock")
+	}()
+
+	rl.Lock()
+	t.Log("lock success")
+	time.Sleep(1*time.Second)
+	rl.Unlock()
+	t.Log("lock unlock")
+	waitGroup.Wait()
 }
