@@ -3,10 +3,11 @@ package lock
 import (
 	"context"
 	"time"
+
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisMutex struct {
+type RedisChannelMutex struct {
 	ctx         context.Context
 	db          *redis.Client
 	LockPath    string
@@ -15,7 +16,7 @@ type RedisMutex struct {
 	LockTime    time.Duration
 }
 
-func NewRedisMutex(ctx context.Context, db *redis.Client, LockPath string, lockTime time.Duration) (*RedisMutex, error) {
+func NewRedisChannelMutex(ctx context.Context, db *redis.Client, LockKey string, lockTime time.Duration) (*RedisChannelMutex, error) {
 	_, err := db.Ping(ctx).Result()
 	if err != nil {
 		return nil, err
@@ -23,21 +24,21 @@ func NewRedisMutex(ctx context.Context, db *redis.Client, LockPath string, lockT
 	if lockTime < 0 {
 		lockTime = time.Duration(0)
 	}
-	channelPath := "RedisMutex:Channel:" + lockName
+	channelPath := "RedisMutex:Channel:" + LockKey
 	ps := db.Subscribe(ctx, channelPath)
-	return &RedisMutex{
+	return &RedisChannelMutex{
 		ctx:         ctx,
 		db:          db,
-		LockPath:    "RedisMutex:"+LockPath+":",
+		LockPath:    "RedisMutex:" + LockKey,
 		ChannelPath: channelPath,
 		ch:          ps.Channel(),
 		LockTime:    lockTime,
 	}, err
 }
 
-func (m *RedisMutex) Lock(lockKey string) {
+func (m *RedisChannelMutex) Lock() {
 	for {
-		created, err := m.db.SetNX(m.ctx, m.LockPath + lockKey, "lock", m.LockTime).Result()
+		created, err := m.db.SetNX(m.ctx, m.LockPath, "lock", m.LockTime).Result()
 		if err != nil {
 			panic(err)
 		}
@@ -48,9 +49,9 @@ func (m *RedisMutex) Lock(lockKey string) {
 	}
 }
 
-func (m *RedisMutex) TryLock(lockKey string) bool {
+func (m *RedisChannelMutex) TryLock() bool {
 	for {
-		created, err := m.db.SetNX(m.ctx, m.LockPath + lockKey, "lock", m.LockTime).Result()
+		created, err := m.db.SetNX(m.ctx, m.LockPath, "lock", m.LockTime).Result()
 		if err != nil {
 			panic(err)
 		}
@@ -58,7 +59,7 @@ func (m *RedisMutex) TryLock(lockKey string) bool {
 	}
 }
 
-func (m *RedisMutex) Unlock(lockKey string) {
+func (m *RedisChannelMutex) Unlock() {
 	m.db.Del(m.ctx, m.LockPath)
-	m.db.Publish(m.ctx, m.ChannelPath + lockKey, "unlock")
+	m.db.Publish(m.ctx, m.ChannelPath, "unlock")
 }
