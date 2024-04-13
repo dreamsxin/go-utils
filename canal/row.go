@@ -58,7 +58,7 @@ func HelperDateTime(e *canal.RowsEvent, n int, columnName string) time.Time {
 	if e.Table.Columns[columnId].Type != schema.TYPE_TIMESTAMP {
 		panic("Not dateTime type")
 	}
-	t, _ := time.Parse("2006-01-02 15:04:05", e.Rows[n][columnId].(string))
+	t, _ := time.ParseInLocation("2006-01-02 15:04:05", e.Rows[n][columnId].(string), time.Local)
 
 	return t
 }
