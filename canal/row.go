@@ -9,7 +9,17 @@ import (
 	"github.com/go-mysql-org/go-mysql/canal"
 	"github.com/go-mysql-org/go-mysql/schema"
 	jsoniter "github.com/json-iterator/go"
+	gormschema "gorm.io/gorm/schema"
 )
+
+var ns gormschema.NamingStrategy
+
+func init() {
+	ns = gormschema.NamingStrategy{
+		TablePrefix:   "public.",
+		SingularTable: true,
+	}
+}
 
 func Unmarshal(element interface{}, e *canal.RowsEvent, n int) error {
 	var columnName string
@@ -22,8 +32,8 @@ func Unmarshal(element interface{}, e *canal.RowsEvent, n int) error {
 		parsedTag := parseTagSetting(t.Field(k).Tag)
 		name := s.Field(k).Type().Name()
 
-		if columnName, ok = parsedTag["COLUMN"]; !ok || columnName == "COLUMN" {
-			continue
+		if columnName, ok = parsedTag["COLUMN"]; !ok {
+			columnName = ns.ColumnName("", t.Field(k).Name)
 		}
 
 		switch name {
