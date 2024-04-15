@@ -106,8 +106,8 @@ func HelperInt(e *canal.RowsEvent, n int, columnName string) int64 {
 func HelperFloat(e *canal.RowsEvent, n int, columnName string) float64 {
 
 	columnId := GetColumnIdByName(e, columnName)
-	if e.Table.Columns[columnId].Type != schema.TYPE_FLOAT {
-		panic("Not float type")
+	if e.Table.Columns[columnId].Type != schema.TYPE_FLOAT && e.Table.Columns[columnId].Type != schema.TYPE_DECIMAL {
+		panic(fmt.Sprintf("Not float type: %s - %d", columnName, e.Table.Columns[columnId].Type))
 	}
 
 	switch e.Rows[n][columnId].(type) {
