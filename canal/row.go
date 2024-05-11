@@ -65,6 +65,9 @@ func Unmarshal(element interface{}, e *canal.RowsEvent, n int) error {
 func HelperDateTime(e *canal.RowsEvent, n int, columnName string) time.Time {
 
 	columnId := GetColumnIdByName(e, columnName)
+	if e.Rows[n][columnId] == nil {
+		return time.Time{}
+	}
 	if e.Table.Columns[columnId].Type != schema.TYPE_TIMESTAMP && e.Table.Columns[columnId].Type != schema.TYPE_DATETIME {
 		panic(fmt.Sprintf("Not dateTime type: %s - %d", columnName, e.Table.Columns[columnId].Type))
 	}
