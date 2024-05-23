@@ -10,21 +10,6 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ml lock.MultipleLock
-var rl *lock.RedisChannelMutex
-
-func init() {
-	ml = lock.NewMultipleLock()
-	ctx := context.Background()
-
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "123456", // no password set
-		DB:       0,        // use default DB
-	})
-	rl, _ = lock.NewRedisChannelMutex(ctx, rdb, "lock.test", time.Duration(10*time.Second))
-}
-
 // go test -v -count=1 --run TestHello .
 func TestHello(t *testing.T) {
 	t.Log("hello world")
@@ -63,6 +48,7 @@ func BenchmarkAdd(b *testing.B) {
 
 // go test -v -count=1 --run TestMultiplelock .
 func TestMultiplelock(t *testing.T) {
+	ml := lock.NewMultipleLock()
 	go func() {
 		ml.Lock(1)
 		t.Log("lock success")
@@ -80,6 +66,18 @@ func TestMultiplelock(t *testing.T) {
 
 // go test -v -count=1 --run TestRedislock .
 func TestRedislock(t *testing.T) {
+
+	ctx := context.Background()
+
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "123456", // no password set
+		DB:       0,        // use default DB
+	})
+	rl, err := lock.NewRedisChannelMutex(ctx, rdb, "lock.test", lock.WithTimeout(time.Duration(2*time.Second)), lock.WithAutoRenew())
+	if err != nil {
+		t.Error(err)
+	}
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(1)
 	go func() {
@@ -87,14 +85,15 @@ func TestRedislock(t *testing.T) {
 		t.Log("start lock2")
 		rl.Lock()
 		t.Log("lock2 success")
-		time.Sleep(2 * time.Second)
+		time.Sleep(4 * time.Second)
 		rl.Unlock()
 		t.Log("lock2 unlock")
+		time.Sleep(4 * time.Second)
 	}()
 
 	rl.Lock()
 	t.Log("lock success")
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	rl.Unlock()
 	t.Log("lock unlock")
 	waitGroup.Wait()
