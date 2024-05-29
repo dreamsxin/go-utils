@@ -22,6 +22,10 @@ func (lock *EasyKeylock) Lock(key string) {
 	lock.locks[lock.keyToIndex(key)].Lock()
 }
 
+func (lock *EasyKeylock) TryLock(key string) bool {
+	return lock.locks[lock.keyToIndex(key)].TryLock()
+}
+
 func (lock *EasyKeylock) Unlock(key string) {
 	lock.locks[lock.keyToIndex(key)].Unlock()
 }
@@ -38,6 +42,10 @@ func init() {
 
 func Lock(key string) {
 	defaultEasyKeylock.locks[defaultEasyKeylock.keyToIndex(key)].Lock()
+}
+
+func TryLock(key string) bool {
+	return defaultEasyKeylock.locks[defaultEasyKeylock.keyToIndex(key)].TryLock()
 }
 
 func Unlock(key string) {
