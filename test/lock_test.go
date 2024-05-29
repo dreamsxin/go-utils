@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/dreamsxin/go-utils/lock"
+	"github.com/dreamsxin/go-utils/lock/easy"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -95,6 +96,30 @@ func TestRedislock(t *testing.T) {
 	t.Log("lock success")
 	time.Sleep(2 * time.Second)
 	rl.Unlock()
+	t.Log("lock unlock")
+	waitGroup.Wait()
+}
+
+// go test -v -count=1 --run TestEasyKeyLock .
+func TestEasyKeyLock(t *testing.T) {
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+		t.Log("start lock2")
+		easy.Lock("lock.test")
+		t.Log("lock2 success")
+		time.Sleep(4 * time.Second)
+		easy.Unlock("lock.test")
+		t.Log("lock2 unlock")
+		time.Sleep(4 * time.Second)
+	}()
+
+	easy.Lock("lock.test")
+	t.Log("lock success")
+	time.Sleep(2 * time.Second)
+	easy.Unlock("lock.test")
 	t.Log("lock unlock")
 	waitGroup.Wait()
 }
