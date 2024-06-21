@@ -14,7 +14,7 @@ import (
 )
 
 // Hash returns a simhash value for the document returned by the scanner
-func Hash(scanner FeatureScanner) uint64 {
+func SipHash(scanner FeatureScanner) uint64 {
 	var signs [64]int64
 
 	for scanner.Scan() {
@@ -41,6 +41,6 @@ func Hash(scanner FeatureScanner) uint64 {
 	return shash
 }
 
-func Distance(v1 uint64, v2 uint64) int {
+func SipDistance(v1 uint64, v2 uint64) int {
 	return int(bits.Len64(v1 ^ v2))
 }

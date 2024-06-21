@@ -14,7 +14,7 @@ func simhashString(s string) uint64 {
 	scanner := bufio.NewScanner(strings.NewReader(s))
 	scanner.Split(ScanByteTrigrams)
 
-	return Hash(scanner)
+	return SipHash(scanner)
 }
 
 func simhashString2(s string) uint64 {
@@ -22,7 +22,7 @@ func simhashString2(s string) uint64 {
 	words := r.FindAll([]byte(s), -1)
 
 	fmt.Println("words", words)
-	return Hash(NewSliceScanner(words))
+	return SipHash(NewSliceScanner(words))
 }
 
 func TestSimSipHash(t *testing.T) {
@@ -36,9 +36,9 @@ func TestSimSipHash(t *testing.T) {
 	h3 := simhashString("The more we get together together together the more we get together the happier we'll be")
 	fmt.Printf("h=%016x\n", h3)
 
-	fmt.Printf("d(h1,h2)=%d\n", Distance(h1, h2))
-	fmt.Printf("d(h1,h3)=%d\n", Distance(h1, h3))
-	fmt.Printf("d(h2,h3)=%d\n", Distance(h2, h3))
+	fmt.Printf("d(h1,h2)=%d\n", SipDistance(h1, h2))
+	fmt.Printf("d(h1,h3)=%d\n", SipDistance(h1, h3))
+	fmt.Printf("d(h2,h3)=%d\n", SipDistance(h2, h3))
 
 	h4 := simhashString(strings.Repeat("Now is the winter", 241)) // length = 4097
 	fmt.Printf("h=%016x\n", h4)
