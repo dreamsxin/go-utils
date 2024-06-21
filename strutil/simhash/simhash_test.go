@@ -2,7 +2,9 @@ package simhash
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"hash/fnv"
 	"regexp"
 	"strings"
 	"testing"
@@ -71,6 +73,31 @@ func TestSimHash(t *testing.T) {
 			h := siphash.Hash(0, 0, b)
 
 			return &feature{h, 1}
+		})))
+		fmt.Printf("Simhash of %s: %x\n", d, hashes[i])
+	}
+
+	fmt.Printf("Comparison of `%s` and `%s`: %d\n", docs[0], docs[1], Compare(hashes[0], hashes[1]))
+	fmt.Printf("Comparison of `%s` and `%s`: %d\n", docs[0], docs[2], Compare(hashes[0], hashes[2]))
+}
+func TestSimHashWeight(t *testing.T) {
+	var docs = [][]byte{
+		[]byte("this is a test phrase"),
+		[]byte("this is a test phrass"),
+		[]byte("foo bar"),
+	}
+
+	hashes := make([]uint64, len(docs))
+
+	for i, d := range docs {
+		hashes[i] = Simhash(NewWordFeatureSet(d, SetCreateFeature(func(b []byte) Feature {
+			h := fnv.New64()
+			h.Write(b)
+
+			if bytes.Equal(b, []byte("this")) {
+				return &feature{h.Sum64(), 2}
+			}
+			return &feature{h.Sum64(), 1}
 		})))
 		fmt.Printf("Simhash of %s: %x\n", d, hashes[i])
 	}
