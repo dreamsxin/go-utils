@@ -1,3 +1,13 @@
+// Copyright 2013 Matthew Fonda. All rights reserved.
+// Use of this source code is governed by the MIT
+// license that can be found in the LICENSE file.
+
+// simhash package implements Charikar's simhash algorithm to generate a 64-bit
+// fingerprint of a given document.
+//
+// simhash fingerprints have the property that similar documents will have a similar
+// fingerprint. Therefore, the hamming distance between two fingerprints will be small
+// if the documents are similar
 package simhash
 
 import (
@@ -17,12 +27,16 @@ type Feature interface {
 
 	// Weight returns the weight of this feature
 	Weight() int
+
+	SetWeight(int)
 }
 
 // FeatureSet represents a set of features in a given document
 type FeatureSet interface {
 	GetFeatures() []Feature
 }
+
+type FuncCreateFeature func([]byte) Feature
 
 // Vectorize generates 64 dimension vectors given a set of features.
 // Vectors are initialized to zero. The i-th element of the vector is then
@@ -100,17 +114,21 @@ func (f feature) Weight() int {
 	return f.weight
 }
 
+func (f *feature) SetWeight(weight int) {
+	f.weight = weight
+}
+
 // Returns a new feature representing the given byte slice, using a weight of 1
-func NewFeature(f []byte) feature {
+func NewFeature(f []byte) Feature {
 	h := fnv.New64()
 	h.Write(f)
-	return feature{h.Sum64(), 1}
+	return &feature{h.Sum64(), 1}
 }
 
 // Returns a new feature representing the given byte slice with the given weight
-func NewFeatureWithWeight(f []byte, weight int) feature {
+func NewFeatureWithWeight(f []byte, weight int) Feature {
 	fw := NewFeature(f)
-	fw.weight = weight
+	fw.SetWeight(weight)
 	return fw
 }
 
@@ -139,14 +157,26 @@ func SimhashBytes(b [][]byte) uint64 {
 	return Fingerprint(VectorizeBytes(b))
 }
 
+type WordFeatureOption func(*WordFeatureSet)
+
+func SetCreateFeature(nf FuncCreateFeature) WordFeatureOption {
+	return func(w *WordFeatureSet) { w.nf = nf }
+}
+
 // WordFeatureSet is a feature set in which each word is a feature,
 // all equal weight.
 type WordFeatureSet struct {
-	b []byte
+	b  []byte
+	nf FuncCreateFeature
 }
 
-func NewWordFeatureSet(b []byte) *WordFeatureSet {
-	fs := &WordFeatureSet{b}
+func NewWordFeatureSet(b []byte, opts ...WordFeatureOption) *WordFeatureSet {
+	fs := &WordFeatureSet{b, NewFeature}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(fs)
+		}
+	}
 	fs.normalize()
 	return fs
 }
@@ -160,7 +190,13 @@ var unicodeBoundaries = regexp.MustCompile(`[\pL-_']+`)
 
 // Returns a []Feature representing each word in the byte slice
 func (w *WordFeatureSet) GetFeatures() []Feature {
-	return getFeatures(w.b, boundaries)
+	return getFeatures(w.b, boundaries, w.nf)
+}
+
+type UnicodeWordFeatureOption func(*UnicodeWordFeatureSet)
+
+func SetUnicodeWordCreateFeature(nf FuncCreateFeature) UnicodeWordFeatureOption {
+	return func(w *UnicodeWordFeatureSet) { w.nf = nf }
 }
 
 // UnicodeWordFeatureSet is a feature set in which each word is a feature,
@@ -169,12 +205,16 @@ func (w *WordFeatureSet) GetFeatures() []Feature {
 // See: http://blog.golang.org/normalization
 // See: https://groups.google.com/forum/#!topic/golang-nuts/YyH1f_qCZVc
 type UnicodeWordFeatureSet struct {
-	b []byte
-	f norm.Form
+	b  []byte
+	f  norm.Form
+	nf FuncCreateFeature
 }
 
-func NewUnicodeWordFeatureSet(b []byte, f norm.Form) *UnicodeWordFeatureSet {
-	fs := &UnicodeWordFeatureSet{b, f}
+func NewUnicodeWordFeatureSet(b []byte, f norm.Form, opts ...UnicodeWordFeatureOption) *UnicodeWordFeatureSet {
+	fs := &UnicodeWordFeatureSet{b, f, NewFeature}
+	for _, opt := range opts {
+		opt(fs)
+	}
 	fs.normalize()
 	return fs
 }
@@ -186,16 +226,20 @@ func (w *UnicodeWordFeatureSet) normalize() {
 
 // Returns a []Feature representing each word in the byte slice
 func (w *UnicodeWordFeatureSet) GetFeatures() []Feature {
-	return getFeatures(w.b, unicodeBoundaries)
+	return getFeatures(w.b, unicodeBoundaries, w.nf)
 }
 
 // Splits the given []byte using the given regexp, then returns a slice
 // containing a Feature constructed from each piece matched by the regexp
-func getFeatures(b []byte, r *regexp.Regexp) []Feature {
+func getFeatures(b []byte, r *regexp.Regexp, nf FuncCreateFeature) []Feature {
 	words := r.FindAll(b, -1)
 	features := make([]Feature, len(words))
 	for i, w := range words {
-		features[i] = NewFeature(w)
+		if nf != nil {
+			features[i] = nf(w)
+		} else {
+			features[i] = NewFeature(w)
+		}
 	}
 	return features
 }

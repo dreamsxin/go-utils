@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/dreamsxin/go-utils/hash/siphash"
 )
 
 func simhashString(s string) uint64 {
@@ -58,6 +60,18 @@ func TestSimHash(t *testing.T) {
 	hashes := make([]uint64, len(docs))
 	for i, d := range docs {
 		hashes[i] = Simhash(NewWordFeatureSet(d))
+		fmt.Printf("Simhash of %s: %x\n", d, hashes[i])
+	}
+
+	fmt.Printf("Comparison of `%s` and `%s`: %d\n", docs[0], docs[1], Compare(hashes[0], hashes[1]))
+	fmt.Printf("Comparison of `%s` and `%s`: %d\n", docs[0], docs[2], Compare(hashes[0], hashes[2]))
+
+	for i, d := range docs {
+		hashes[i] = Simhash(NewWordFeatureSet(d, SetCreateFeature(func(b []byte) Feature {
+			h := siphash.Hash(0, 0, b)
+
+			return &feature{h, 1}
+		})))
 		fmt.Printf("Simhash of %s: %x\n", d, hashes[i])
 	}
 
