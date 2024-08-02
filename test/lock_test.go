@@ -135,3 +135,22 @@ func TestKeyToIndex(t *testing.T) {
 		t.Error("collision index", index1)
 	}
 }
+
+// go test -v -count=1 -benchmem -run=^$ -bench ^BenchmarkEasyKeyLock$
+// go test -v -bench=BenchmarkEasyKeyLock .
+func BenchmarkEasyKeyLock(b *testing.B) {
+
+	for i := 0; i < b.N; i++ {
+		easy.Lock("lock.test")
+		easy.Unlock("lock.test")
+	}
+}
+
+// go test -v -count=1 -benchmem -run=^$ -bench ^BenchmarkMultiplelock$
+func BenchmarkMultiplelock(b *testing.B) {
+	ml := lock.NewMultipleLock()
+	for i := 0; i < b.N; i++ {
+		ml.Lock("lock.test")
+		ml.Unlock("lock.test")
+	}
+}
