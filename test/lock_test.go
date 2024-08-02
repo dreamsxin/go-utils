@@ -123,3 +123,15 @@ func TestEasyKeyLock(t *testing.T) {
 	t.Log("lock unlock")
 	waitGroup.Wait()
 }
+
+func TestKeyToIndex(t *testing.T) {
+
+	lockkey1 := "6856e0a89f2c46d890f81ae70abbf603"
+	lockkey2 := "6856e0a89f2c46d890f81ae70abbf603:SendNotice"
+
+	index1 := easy.KeyToIndex(lockkey1)
+	index2 := easy.KeyToIndex(lockkey2)
+	if index1 == index2 {
+		t.Error("collision index", index1)
+	}
+}

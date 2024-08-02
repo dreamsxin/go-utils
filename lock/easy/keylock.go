@@ -19,18 +19,18 @@ func New(lock_count uint32) *EasyKeylock {
 }
 
 func (lock *EasyKeylock) Lock(key string) {
-	lock.locks[lock.keyToIndex(key)].Lock()
+	lock.locks[lock.KeyToIndex(key)].Lock()
 }
 
 func (lock *EasyKeylock) TryLock(key string) bool {
-	return lock.locks[lock.keyToIndex(key)].TryLock()
+	return lock.locks[lock.KeyToIndex(key)].TryLock()
 }
 
 func (lock *EasyKeylock) Unlock(key string) {
-	lock.locks[lock.keyToIndex(key)].Unlock()
+	lock.locks[lock.KeyToIndex(key)].Unlock()
 }
 
-func (lock *EasyKeylock) keyToIndex(key string) uint32 {
+func (lock *EasyKeylock) KeyToIndex(key string) uint32 {
 	return crc32.Checksum([]byte(key), lock.table) % lock.lock_count
 }
 
@@ -41,13 +41,17 @@ func init() {
 }
 
 func Lock(key string) {
-	defaultEasyKeylock.locks[defaultEasyKeylock.keyToIndex(key)].Lock()
+	defaultEasyKeylock.locks[defaultEasyKeylock.KeyToIndex(key)].Lock()
 }
 
 func TryLock(key string) bool {
-	return defaultEasyKeylock.locks[defaultEasyKeylock.keyToIndex(key)].TryLock()
+	return defaultEasyKeylock.locks[defaultEasyKeylock.KeyToIndex(key)].TryLock()
 }
 
 func Unlock(key string) {
-	defaultEasyKeylock.locks[defaultEasyKeylock.keyToIndex(key)].Unlock()
+	defaultEasyKeylock.locks[defaultEasyKeylock.KeyToIndex(key)].Unlock()
+}
+
+func KeyToIndex(key string) uint32 {
+	return defaultEasyKeylock.KeyToIndex(key)
 }
