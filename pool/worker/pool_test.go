@@ -1,4 +1,4 @@
-package pond
+package worker
 
 import (
 	"sync/atomic"
