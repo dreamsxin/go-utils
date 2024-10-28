@@ -13,3 +13,8 @@ git push --tags
 ```shell
 go get github.com/dreamsxin/go-utils@v1.0.0
 ```
+
+Donation
+--------
+
+* [捐贈（Donation）](https://github.com/dreamsxin/cphalcon7/blob/master/DONATE.md)
