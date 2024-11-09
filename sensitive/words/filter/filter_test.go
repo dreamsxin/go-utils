@@ -52,4 +52,8 @@ func TestStrictContains(t *testing.T) {
 	if c2 != false {
 		t.Errorf("Test Contains expect false, get %T, %v", c2, c2)
 	}
+	c2 = wf.StrictContains("妲己", root)
+	if c2 != true {
+		t.Errorf("Test Contains expect true, get %T, %v", c1, c1)
+	}
 }
