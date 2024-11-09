@@ -94,7 +94,16 @@ func (wf *WordsFilter) Contains(text string, root map[string]*Node) bool {
 	}
 	wf.mutex.RLock()
 	defer wf.mutex.RUnlock()
-	return wf.node.contains(text, root)
+	return wf.node.contains(text, root, false)
+}
+
+func (wf *WordsFilter) StrictContains(text string, root map[string]*Node) bool {
+	if wf.StripSpace {
+		text = stripSpace(text)
+	}
+	wf.mutex.RLock()
+	defer wf.mutex.RUnlock()
+	return wf.node.contains(text, root, true)
 }
 
 // Remove specified sensitive words from sensitive word map.

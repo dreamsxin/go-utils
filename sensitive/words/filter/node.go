@@ -132,25 +132,26 @@ loop:
 }
 
 // Whether the string contains sensitive words.
-func (node *Node) contains(text string, root map[string]*Node) bool {
+func (node *Node) contains(text string, root map[string]*Node, strict bool) bool {
 	if root == nil || text == "" {
 		return false
 	}
 	textr := []rune(text)
 	end := len(textr) - 1
+	searchroot := root
 	for i := 0; i <= end; i++ {
 		word := string(textr[i])
-		if n, ok := root[word]; ok {
+		if n, ok := searchroot[word]; ok {
 			if i == end {
 				return n.Placeholders != ""
 			} else {
 				if len(n.Child) == 0 { // last
 					return true
 				}
-				root = n.Child
+				searchroot = n.Child
 			}
-		} else {
-			continue
+		} else if strict {
+			searchroot = root
 		}
 	}
 	return false

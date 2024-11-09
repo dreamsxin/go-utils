@@ -37,3 +37,19 @@ func TestWordsFilterWithFile(t *testing.T) {
 		t.Errorf("Test Contains expect true, get %T, %v", c1, c1)
 	}
 }
+
+func TestStrictContains(t *testing.T) {
+	texts := []string{
+		"妲己",
+	}
+	wf := New()
+	root := wf.Generate(texts)
+	c1 := wf.Contains("妲xxxxx己", root)
+	if c1 != true {
+		t.Errorf("Test Contains expect true, get %T, %v", c1, c1)
+	}
+	c2 := wf.StrictContains("妲xxxxx己", root)
+	if c2 != false {
+		t.Errorf("Test Contains expect false, get %T, %v", c2, c2)
+	}
+}
