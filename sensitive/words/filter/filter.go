@@ -84,7 +84,16 @@ func (wf *WordsFilter) Replace(text string, root map[string]*Node) string {
 	}
 	wf.mutex.RLock()
 	defer wf.mutex.RUnlock()
-	return wf.node.replace(text, root)
+	return wf.node.replace(text, root, false)
+}
+
+func (wf *WordsFilter) StrictReplace(text string, root map[string]*Node) string {
+	if wf.StripSpace {
+		text = stripSpace(text)
+	}
+	wf.mutex.RLock()
+	defer wf.mutex.RUnlock()
+	return wf.node.replace(text, root, true)
 }
 
 // Whether the string contains sensitive words.

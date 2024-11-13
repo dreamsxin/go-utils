@@ -69,7 +69,7 @@ func (node *Node) remove(text string, root map[string]*Node) {
 
 // Replace sensitive words in strings and return new strings.
 // Follow the principle of maximum matching.
-func (node *Node) replace(text string, root map[string]*Node) string {
+func (node *Node) replace(text string, root map[string]*Node, strict bool) string {
 	if root == nil || text == "" {
 		return text
 	}
@@ -86,9 +86,9 @@ loop:
 		for ; i < l; i++ {
 			word := string(textr[i])
 			if n, ok := words[word]; ok {
-				back = append(back, n)
 				if n.Child != nil {
 					words = n.Child
+					back = append(back, n)
 				} else if n.Placeholders != "" {
 					bf.WriteString(string(textr[s:e]))
 					bf.WriteString(n.Placeholders)
@@ -98,15 +98,12 @@ loop:
 				} else {
 					break
 				}
-			} else if n != nil && n.Placeholders != "" {
-				bf.WriteString(string(textr[s:e]))
-				bf.WriteString(n.Placeholders)
-				s, e = i, i
-				continue loop
-			} else {
+			} else if strict {
+				back = back[:0]
 				break
 			}
 		}
+
 		// Backward match fails, backtracking.
 		for ; i > e; i-- {
 			bl := len(back)

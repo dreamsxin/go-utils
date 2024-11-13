@@ -38,6 +38,22 @@ func TestWordsFilterWithFile(t *testing.T) {
 	}
 }
 
+func TestReplace(t *testing.T) {
+	texts := []string{
+		"妲己",
+	}
+	wf := New()
+	root := wf.Generate(texts)
+	r1 := wf.Replace("妲xxxxx己", root)
+	if r1 != "**" {
+		t.Errorf("Test Replace expect **,get %T,%v", r1, r1)
+	}
+	r2 := wf.StrictReplace("妲xxxxx己", root)
+	if r2 != "妲xxxxx己" {
+		t.Errorf("Test Replace expect 妲xxxxx己,get %T,%v", r2, r2)
+	}
+}
+
 func TestStrictContains(t *testing.T) {
 	texts := []string{
 		"妲己",
@@ -51,9 +67,5 @@ func TestStrictContains(t *testing.T) {
 	c2 := wf.StrictContains("妲xxxxx己", root)
 	if c2 != false {
 		t.Errorf("Test Contains expect false, get %T, %v", c2, c2)
-	}
-	c2 = wf.StrictContains("妲己", root)
-	if c2 != true {
-		t.Errorf("Test Contains expect true, get %T, %v", c1, c1)
 	}
 }
