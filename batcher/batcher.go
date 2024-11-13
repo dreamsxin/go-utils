@@ -2,7 +2,7 @@ package batcher
 
 import (
 	"context"
-	"log"
+	//"log"
 	"time"
 )
 
@@ -42,13 +42,13 @@ func (t Batcher[T]) RunLoop() {
 		for {
 			select {
 			case <-t.ctx.Done():
-				log.Default().Println("close")
+				//log.Default().Println("close")
 				if len(batch) > 0 {
 					t.fn(batch)
 				}
 				return
 			case v, ok := <-t.ch:
-				log.Default().Println("get")
+				//log.Default().Println("get")
 				if !ok { // closed
 					t.fn(batch)
 					return
@@ -60,7 +60,7 @@ func (t Batcher[T]) RunLoop() {
 					batch = make([]T, 0, t.batchSize) // reset
 				}
 			case <-ticker.C:
-				log.Default().Println("ticker")
+				//log.Default().Println("ticker")
 				if len(batch) > 0 { // partial
 					t.fn(batch)
 					batch = make([]T, 0, t.batchSize) // reset
