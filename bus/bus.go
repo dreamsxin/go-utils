@@ -35,7 +35,13 @@ func ProvideBus() *InProcBus {
 
 // Publish function publish a message to the bus listener.
 func (b *InProcBus) Publish(ctx context.Context, msg Msg) error {
-	var msgName = reflect.TypeOf(msg).Elem().Name()
+	v := reflect.TypeOf(msg)
+	msgName := ""
+	if v.Kind() == reflect.Ptr {
+		msgName = "p:" + v.Elem().Name()
+	} else {
+		msgName = v.Name()
+	}
 
 	var params = []reflect.Value{}
 	if listeners, exists := b.listeners[msgName]; exists {
@@ -66,7 +72,13 @@ func callListeners(listeners []HandlerFunc, params []reflect.Value) error {
 
 func (b *InProcBus) AddEventListener(handler HandlerFunc) {
 	handlerType := reflect.TypeOf(handler)
-	eventName := handlerType.In(1).Elem().Name()
+	v := handlerType.In(1)
+	eventName := ""
+	if v.Kind() == reflect.Ptr {
+		eventName = "p:" + v.Elem().Name()
+	} else {
+		eventName = v.Name()
+	}
 	_, exists := b.listeners[eventName]
 	if !exists {
 		b.listeners[eventName] = make([]HandlerFunc, 0)

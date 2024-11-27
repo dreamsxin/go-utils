@@ -17,6 +17,11 @@ func TestEventPublish(t *testing.T) {
 
 	var invoked bool
 
+	bus.AddEventListener(func(ctx context.Context, query testQuery) error {
+		invoked = true
+		return nil
+	})
+
 	bus.AddEventListener(func(ctx context.Context, query *testQuery) error {
 		invoked = true
 		return nil
