@@ -1,15 +1,17 @@
 package file
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 func TestFilelock(t *testing.T) {
-	locked := TryLock("./go-lock.lock")
+	os.MkdirAll("./lock", 0755)
+	locked := TryLock("./lock/go-lock.lock")
 	require.True(t, locked)
-	locked2 := New().TryLock("./go-lock.lock")
+	locked2 := New().TryLock("./lock/go-lock.lock")
 	require.False(t, locked2)
 	Unlock("./go-lock.lock")
 
