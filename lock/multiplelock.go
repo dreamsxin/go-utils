@@ -7,14 +7,16 @@ import (
 
 type refCounter struct {
 	waitGroup sync.WaitGroup
-	counter int64
-	lock    *sync.RWMutex
+	counter   int64
+	lock      *sync.RWMutex
 }
 
 // MultipleLock is the main interface for lock base on key
 type MultipleLock interface {
 	// Lock base on the key
 	Lock(interface{})
+
+	TryLock(interface{}) bool
 
 	// RLock lock the rw for reading
 	RLock(interface{})
@@ -39,6 +41,16 @@ func (l *lock) Lock(key interface{}) {
 	atomic.AddInt64(&m.counter, 1)
 	m.waitGroup.Add(1)
 	m.lock.Lock()
+}
+
+func (l *lock) TryLock(key interface{}) bool {
+	m := l.getLocker(key)
+	if !m.lock.TryLock() {
+		return false
+	}
+	atomic.AddInt64(&m.counter, 1)
+	m.waitGroup.Add(1)
+	return true
 }
 
 func (l *lock) RLock(key interface{}) {

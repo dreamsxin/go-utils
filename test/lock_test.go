@@ -65,6 +65,28 @@ func TestMultiplelock(t *testing.T) {
 	ml.Wait(1)
 }
 
+// go test -v -count=1 --run TestMultiplelock .
+func TestMultiplelockTryLock(t *testing.T) {
+	ml := lock.NewMultipleLock()
+	go func() {
+		ml.Lock(1)
+		t.Log("lock success in goroutine")
+		time.Sleep(2 * time.Second)
+		ml.Unlock(1)
+	}()
+
+	time.Sleep(1 * time.Second)
+	if ml.TryLock(1) {
+		t.Log("try lock success")
+		ml.Unlock(1)
+		t.Log("try lock unlock")
+	} else {
+		t.Log("try lock fail")
+	}
+
+	ml.Wait(1)
+}
+
 // go test -v -count=1 --run TestRedislock .
 func TestRedislock(t *testing.T) {
 
