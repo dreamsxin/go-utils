@@ -87,6 +87,24 @@ func TestMultiplelockTryLock(t *testing.T) {
 	ml.Wait(1)
 }
 
+// go test -v -count=1 --run TestMultiplelock .
+func TestLockManager(t *testing.T) {
+	ml := lock.NewLockManager()
+	go func() {
+		ml.Lock(1)
+		t.Log("lock success")
+		time.Sleep(2 * time.Second)
+		ml.Unlock(1)
+	}()
+
+	ml.Lock(1)
+	t.Log("lock success")
+	time.Sleep(1 * time.Second)
+	ml.Unlock(1)
+
+	ml.Wait(1)
+}
+
 // go test -v -count=1 --run TestRedislock .
 func TestRedislock(t *testing.T) {
 
